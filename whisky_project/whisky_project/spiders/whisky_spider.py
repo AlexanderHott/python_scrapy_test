@@ -1,8 +1,7 @@
-from os.path import abspath
-
 import scrapy
 import scrapy.http
 from parsel.selector import SelectorList
+import collections.abc as collections_abc
 
 
 class WhiskySpider(scrapy.Spider):
@@ -11,8 +10,13 @@ class WhiskySpider(scrapy.Spider):
     name: str = "whisky"
     start_urls: list[str] = ["https://www.whiskyshop.com/scotch-whisky/all"]
 
-    def parse(self, response: scrapy.http.TextResponse):
-        # products: SelectorList
+    # https://docs.python.org/3/library/typing.html#typing.Generator
+    def parse(
+        self, response: scrapy.http.TextResponse
+    ) -> collections_abc.Generator[dict[str, str]]:
+        """Parse the response and yield the whisky name, price, and link."""
+
+        products: SelectorList
         for products in response.css("div.product-item-info"):
             try:
                 yield {
@@ -24,5 +28,12 @@ class WhiskySpider(scrapy.Spider):
                 yield {
                     "name": products.css("a.product-item-link::text").get(),
                     "price": "sold out",
-                    "link": products.css("a.product-item-link::attrib(href)").attrib["href"],
+                    "link": products.css("a.product-item-link::attrib(href)").attrib[
+                        "href"
+                    ],
                 }
+
+        next_page = response.css("a.action.next").attrib["href"]
+
+        if next_page is not None:
+            yield response.follow(next_page, callback=self.parse)
