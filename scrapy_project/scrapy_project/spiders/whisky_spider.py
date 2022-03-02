@@ -13,7 +13,7 @@ class WhiskySpider(scrapy.Spider):
     # https://docs.python.org/3/library/typing.html#typing.Generator
     def parse(
         self, response: scrapy.http.TextResponse
-    ) -> collections_abc.Generator[dict[str, str]]:
+    ) -> collections_abc.Generator[dict[str, str], None, None]:
         """Parse the response and yield the whisky name, price, and link."""
 
         products: SelectorList
